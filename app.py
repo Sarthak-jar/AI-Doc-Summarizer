@@ -1,30 +1,30 @@
-from flask import Flask, request, jsonify, render_template
-import fitz  # PyMuPDF
-from gemini_handler import gemini_summarize
+from flask import Flask, request, render_template
+import os
+from summarizer import summarize_text
+from extractors import extract_text_from_pdf, extract_text_from_docx
 
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/')
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template("index.html")
+    summary = ""
+    if request.method == "POST":
+        uploaded_file = request.files["document"]
+        if uploaded_file:
+            path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename)
+            uploaded_file.save(path)
 
-@app.route('/summarize', methods=['POST'])
-def summarize_doc():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
+            if path.endswith(".pdf"):
+                text = extract_text_from_pdf(path)
+            elif path.endswith(".docx"):
+                text = extract_text_from_docx(path)
+            else:
+                text = uploaded_file.read().decode()
 
-    file = request.files['file']
-    if not file:
-        return jsonify({'error': 'Empty file'}), 400
+            summary = summarize_text(text)
+    return render_template("index.html", summary=summary)
 
-    # Read PDF content
-    doc = fitz.open(stream=file.read(), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-
-    summary = gemini_summarize(text)
-    return jsonify({'summary': summary})
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

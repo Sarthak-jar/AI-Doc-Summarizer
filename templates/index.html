@@ -5,41 +5,14 @@
 </head>
 <body>
     <h2>Upload a Document</h2>
-    <input type="file" id="fileInput" required><br><br>
-    <button id="summarizeBtn">Summarize</button>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="document" required><br><br>
+        <input type="submit" value="Summarize">
+    </form>
 
-    <h3>Summary:</h3>
-    <p id="summaryOutput"></p>
-
-    <script>
-        const fileInput = document.getElementById("fileInput");
-        const summarizeBtn = document.getElementById("summarizeBtn");
-        const outputBox = document.getElementById("summaryOutput");
-
-        summarizeBtn.onclick = async () => {
-            if (!fileInput.files[0]) {
-                alert("Please upload a file.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            outputBox.innerText = "Loading...";
-
-            try {
-                const response = await fetch("/summarize", {
-                    method: "POST",
-                    body: formData
-                });
-
-                const data = await response.json();
-                outputBox.innerText = data.summary || "No summary generated.";
-            } catch (error) {
-                console.error(error);
-                outputBox.innerText = "Error occurred.";
-            }
-        };
-    </script>
+    {% if summary %}
+        <h3>Summary:</h3>
+        <p>{{ summary }}</p>
+    {% endif %}
 </body>
 </html>
